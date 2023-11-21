@@ -1,4 +1,3 @@
 # EpicShot
 
-Screenshot tool for linux (using X11).
-
+Screenshot tool for linux.
