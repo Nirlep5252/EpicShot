@@ -7,8 +7,9 @@ mod x;
 
 fn main() -> Result<(), String> {
     let input = cli::Cli::parse();
-    let screenshot_interface: Box<dyn ScreenshotInterface>;
 
+    // Determine which screenshot interface to use based on the input or the display server.
+    let screenshot_interface: Box<dyn ScreenshotInterface>;
     if input.x11 && input.wayland {
         eprintln!("You can't use both `--x11` and `--wayland` at the same time.");
         std::process::exit(1);
@@ -41,6 +42,7 @@ fn main() -> Result<(), String> {
 
     if input.clipboard {
         screenshot_interface.copy_screenshot(&screenshot_image)?;
+        println!("Screenshot copied to clipboard.");
     }
     if input.save.is_some() {
         screenshot_image

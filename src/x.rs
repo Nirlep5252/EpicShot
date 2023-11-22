@@ -1,4 +1,6 @@
+use image::ImageEncoder;
 use image::RgbaImage;
+use std::io::Write;
 
 use crate::types::{ScreenshotInterface, ScreenshotType};
 
@@ -64,6 +66,31 @@ impl ScreenshotInterface for XScreenshot {
     }
 
     fn copy_screenshot(&self, screenshot_image: &RgbaImage) -> Result<(), String> {
-        todo!();
+        let mut png_data = vec![];
+        image::codecs::png::PngEncoder::new(&mut png_data)
+            .write_image(
+                screenshot_image,
+                screenshot_image.width(),
+                screenshot_image.height(),
+                image::ColorType::Rgba8,
+            )
+            .map_err(|e| e.to_string())?;
+
+        // store using command line: xclip
+        let mut child = std::process::Command::new("xclip")
+            .arg("-selection")
+            .arg("clipboard")
+            .arg("-t")
+            .arg("image/png")
+            .stdin(std::process::Stdio::piped())
+            .spawn()
+            .map_err(|e| e.to_string())?;
+        child
+            .stdin
+            .as_mut()
+            .unwrap()
+            .write_all(&png_data)
+            .map_err(|e| e.to_string())?;
+        Ok(())
     }
 }
