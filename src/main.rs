@@ -19,8 +19,7 @@ fn main() -> Result<(), String> {
     } else if input.wayland {
         todo!("Wayland is not supported yet");
     } else {
-        eprintln!("Auto detection of display server is not supported yet. Please specify a display server using `--x11` or `--wayland`.");
-        std::process::exit(1);
+        return Err("Auto detection of display server is not supported yet. Please specify a display server using `--x11` or `--wayland`.".to_string());
     }
 
     let screenshot_type: ScreenshotType;
@@ -31,8 +30,9 @@ fn main() -> Result<(), String> {
     } else if input.window.is_some() {
         todo!("--window is not supported yet");
     } else {
-        eprintln!("You must specify a screenshot type. Use `--help` for more information.");
-        std::process::exit(1);
+        return Err(
+            "You must specify a screenshot type. Use `--help` for more information.".to_string(),
+        );
     }
 
     let screenshot_image = screenshot_interface.take_screenshot(screenshot_type)?;
