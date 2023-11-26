@@ -7,7 +7,7 @@ Currently tested only on `i3wm` on `Arch Linux`.
 
 - Rust: `1.74.0+`
 - OS Specific Requirements:
-  - Arch Linux: `libxcb`, `xcb-proto`, `xclip`
+  - Arch Linux: `libxcb`, `libxrandr`, `xclip`
 
 ## Installation
 
@@ -29,10 +29,16 @@ SOON
 
 ## Example Usage
 
-Take screenshot of all screens and copy to clipboard.
+Take screenshot of your entire screen (including all monitors) and copy to clipboard.
 
 ```bash
 epicshot --x11 --all --clipboard
+```
+
+Take screenshot of a particular monitor and copy to clipboard.
+
+```bash
+epicshot --x11 --monitor 0 --clipboard
 ```
 
 Save screenshot to a specific file.

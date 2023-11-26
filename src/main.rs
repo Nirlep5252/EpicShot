@@ -26,18 +26,16 @@ fn main() -> Result<(), String> {
     let screenshot_type: ScreenshotType;
     if input.all {
         screenshot_type = ScreenshotType::AllScreens;
+    } else if input.monitor.is_some() {
+        screenshot_type = ScreenshotType::Monitor(input.monitor.unwrap());
     } else if input.window.is_some() {
         todo!("--window is not supported yet");
-    } else if input.screen.is_some() {
-        todo!("--screen is not supported yet");
     } else {
         eprintln!("You must specify a screenshot type. Use `--help` for more information.");
         std::process::exit(1);
     }
 
-    let screenshot_image = screenshot_interface
-        .take_screenshot(screenshot_type)
-        .expect("Failed to take screenshot");
+    let screenshot_image = screenshot_interface.take_screenshot(screenshot_type)?;
     println!("Screenshot taken.");
 
     if input.clipboard {

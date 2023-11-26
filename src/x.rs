@@ -13,6 +13,37 @@ impl XScreenshot {
         let (connection, _) = xcb::Connection::connect(None).unwrap();
         Self { connection }
     }
+
+    fn get_screenshot_image(
+        &self,
+        screen: &xcb::x::Screen,
+        x: i16,
+        y: i16,
+        width: u16,
+        height: u16,
+    ) -> RgbaImage {
+        let cookie = self.connection.send_request(&xcb::x::GetImage {
+            format: xcb::x::ImageFormat::ZPixmap,
+            drawable: xcb::x::Drawable::Window(screen.root()),
+            x,
+            y,
+            width,
+            height,
+            plane_mask: std::u32::MAX,
+        });
+
+        let reply = self
+            .connection
+            .wait_for_reply(cookie)
+            .map_err(|e| e.to_string())
+            .unwrap();
+        RgbaImage::from_raw(
+            width.into(),
+            height.into(),
+            self.image_data_to_pixels(reply.data()),
+        )
+        .expect("Unable to create image from raw data")
+    }
 }
 
 impl ScreenshotInterface for XScreenshot {
@@ -21,35 +52,42 @@ impl ScreenshotInterface for XScreenshot {
         screenshot_type: crate::types::ScreenshotType,
     ) -> Result<RgbaImage, String> {
         let setup = self.connection.get_setup();
-        let mut screens = setup.roots();
+        let screen = setup.roots().nth(0).ok_or("No screen found")?;
 
         match screenshot_type {
-            ScreenshotType::AllScreens => {
-                let screen = screens.nth(0).unwrap();
-                let cookie = self.connection.send_request(&xcb::x::GetImage {
-                    format: xcb::x::ImageFormat::ZPixmap,
-                    drawable: xcb::x::Drawable::Window(screen.root()),
-                    x: 0,
-                    y: 0,
-                    width: screen.width_in_pixels(),
-                    height: screen.height_in_pixels(),
-                    plane_mask: std::u32::MAX,
+            ScreenshotType::AllScreens => Ok(self.get_screenshot_image(
+                screen,
+                0,
+                0,
+                screen.width_in_pixels(),
+                screen.height_in_pixels(),
+            )),
+            ScreenshotType::Monitor(monitor_num) => {
+                // Get all the monitors
+                let res_cookie = self.connection.send_request(&xcb::randr::GetMonitors {
+                    window: screen.root(),
+                    get_active: true,
                 });
-
-                let reply = self
+                let res_reply = self
                     .connection
-                    .wait_for_reply(cookie)
+                    .wait_for_reply(res_cookie)
                     .map_err(|e| e.to_string())?;
-                let image = RgbaImage::from_raw(
-                    screen.width_in_pixels().into(),
-                    screen.height_in_pixels().into(),
-                    self.image_data_to_pixels(reply.data()),
-                )
-                .expect("Unable to create image from raw data");
-                Ok(image)
-            }
-            ScreenshotType::Screen(_) => {
-                todo!();
+                let monitors = res_reply.monitors().collect::<Vec<_>>();
+
+                if monitor_num >= monitors.len() {
+                    return Err(format!(
+                        "Monitor {} does not exist. There are only {} monitors.",
+                        monitor_num,
+                        monitors.len()
+                    ));
+                }
+                Ok(self.get_screenshot_image(
+                    screen,
+                    monitors[monitor_num].x(),
+                    monitors[monitor_num].y(),
+                    monitors[monitor_num].width(),
+                    monitors[monitor_num].height(),
+                ))
             }
             ScreenshotType::Window(_) => {
                 todo!();

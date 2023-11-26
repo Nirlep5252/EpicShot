@@ -10,9 +10,9 @@ pub(crate) struct Cli {
     #[clap(long)]
     pub(crate) all: bool,
 
-    /// Take screenshot of a specific screen
+    /// Take screenshot of a specific monitor
     #[clap(long)]
-    pub(crate) screen: Option<u32>,
+    pub(crate) monitor: Option<usize>,
 
     /// Take screenshot of a specific window
     #[clap(long)]

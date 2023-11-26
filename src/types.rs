@@ -2,7 +2,7 @@ use image::RgbaImage;
 
 pub(crate) enum ScreenshotType {
     AllScreens,
-    Screen(u32),
+    Monitor(usize),
     Window(u32),
     Selection {
         x: u32,
