@@ -11,6 +11,12 @@ Currently tested only on `i3wm` on `Arch Linux`.
 
 ## Installation
 
+### Crates.io
+
+```bash
+cargo install epicshot
+```
+
 ### Manual
 
 ```bash
@@ -18,10 +24,6 @@ git clone https://github.com/Nirlep5252/EpicShot
 cd EpicShot
 cargo install --path .
 ```
-
-### Crates.io
-
-SOON
 
 ### Package Manager
 
