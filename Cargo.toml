@@ -1,7 +1,17 @@
 [package]
 name = "epicshot"
 version = "0.1.0"
+authors = ["nirlep5252"]
 edition = "2021"
+rust-version = "1.74.0"
+description = "Epic screenshot tool for Linux."
+documentation = "https://github.com/Nirlep5252/EpicShot"
+readme = "README.md"
+homepage = "https://github.com/Nirlep5252/EpicShot"
+repository = "https://github.com/Nirlep5252/EpicShot"
+license = "MIT"
+keywords = ["screenshot", "linux", "xcb", "x11", "epicshot"]
+categories = ["command-line-utilities"]
 
 [dependencies]
 clap = { version = "4.4.8", features = ["derive"] }

@@ -1,6 +1,6 @@
 # EpicShot
 
-Epic screenshot tool for linux.\
+Epic screenshot tool for Linux.\
 Currently tested only on `i3wm` on `Arch Linux`.
 
 ## Requirements
