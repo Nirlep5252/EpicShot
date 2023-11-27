@@ -21,7 +21,7 @@ impl XScreenshot {
         y: i16,
         width: u16,
         height: u16,
-    ) -> Result<RgbaImage, String> {
+    ) -> Result<RgbaImage, ()> {
         let cookie = self.connection.send_request(&xcb::x::GetImage {
             format: xcb::x::ImageFormat::ZPixmap,
             drawable: xcb::x::Drawable::Window(window),
@@ -35,7 +35,7 @@ impl XScreenshot {
         let reply = self
             .connection
             .wait_for_reply(cookie)
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| error!("Unable to get image: {e}"))?;
         Ok(RgbaImage::from_raw(
             width.into(),
             height.into(),
@@ -49,9 +49,13 @@ impl ScreenshotInterface for XScreenshot {
     fn take_screenshot(
         &self,
         screenshot_type: crate::types::ScreenshotType,
-    ) -> Result<RgbaImage, String> {
+    ) -> Result<RgbaImage, ()> {
         let setup = self.connection.get_setup();
-        let screen = setup.roots().nth(0).ok_or("No screen found")?;
+        let screen = setup
+            .roots()
+            .nth(0)
+            .ok_or("No screen found")
+            .map_err(|e| error!("{e}"))?;
 
         match screenshot_type {
             ScreenshotType::AllScreens => self.get_screenshot_image(
@@ -70,14 +74,15 @@ impl ScreenshotInterface for XScreenshot {
                 let res_reply = self
                     .connection
                     .wait_for_reply(res_cookie)
-                    .map_err(|e| e.to_string())?;
+                    .map_err(|e| error!("Unable to get monitors: {e}"))?;
 
                 if monitor_num >= res_reply.n_outputs() as usize {
-                    return Err(format!(
+                    error!(
                         "Monitor {} does not exist. There are only {} monitors. (0-indexed)",
                         monitor_num,
                         res_reply.n_outputs()
-                    ));
+                    );
+                    return Err(());
                 }
                 let monitor = res_reply.monitors().nth(monitor_num).unwrap();
                 self.get_screenshot_image(
@@ -90,7 +95,7 @@ impl ScreenshotInterface for XScreenshot {
             }
             ScreenshotType::Window(window_id) => {
                 let window_id = u32::from_str_radix(window_id.trim_start_matches("0x"), 16)
-                    .map_err(|_| "Invalid window ID (it starts with \"0x\")".to_string())?;
+                    .map_err(|_| error!("Invalid window ID (it starts with \"0x\")"))?;
                 let window = unsafe { std::mem::transmute::<u32, xcb::x::Window>(window_id) };
                 let geometry_cookie = self.connection.send_request(&xcb::x::GetGeometry {
                     drawable: xcb::x::Drawable::Window(window),
@@ -98,14 +103,9 @@ impl ScreenshotInterface for XScreenshot {
                 let geometry = self
                     .connection
                     .wait_for_reply(geometry_cookie)
-                    .map_err(|e| e.to_string())?;
-                self.get_screenshot_image(
-                    window,
-                    geometry.x(),
-                    geometry.y(),
-                    geometry.width(),
-                    geometry.height(),
-                )
+                    .map_err(|e| error!("Unable to get geometry: {e}"))?;
+                debug!("{:?}", geometry);
+                self.get_screenshot_image(window, 0, 0, geometry.width(), geometry.height())
             }
             ScreenshotType::Selection {
                 x,
@@ -116,7 +116,7 @@ impl ScreenshotInterface for XScreenshot {
         }
     }
 
-    fn copy_screenshot(&self, screenshot_image: &RgbaImage) -> Result<(), String> {
+    fn copy_screenshot(&self, screenshot_image: &RgbaImage) -> Result<(), ()> {
         let mut png_data = vec![];
         image::codecs::png::PngEncoder::new(&mut png_data)
             .write_image(
@@ -125,7 +125,7 @@ impl ScreenshotInterface for XScreenshot {
                 screenshot_image.height(),
                 image::ColorType::Rgba8,
             )
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| error!("Unable to encode image to PNG: {e}"))?;
 
         // store using command line: xclip
         let mut child = std::process::Command::new("xclip")
@@ -135,13 +135,13 @@ impl ScreenshotInterface for XScreenshot {
             .arg("image/png")
             .stdin(std::process::Stdio::piped())
             .spawn()
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| error!("Unable to copy to xclip[0]: {e}"))?;
         child
             .stdin
             .as_mut()
             .unwrap()
             .write_all(&png_data)
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| error!("Unable to copy to xclip[1]: {e}"))?;
         Ok(())
     }
 }
