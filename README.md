@@ -43,6 +43,13 @@ Take screenshot of a particular monitor and copy to clipboard.
 epicshot --x11 --monitor 0 --clipboard
 ```
 
+Take screenshot of a particular window and copy to clipboard.
+
+```bash
+epicshot --x11 --window <WINDOW ID> --clipboard
+# You can get the window ID using `xwininfo`
+```
+
 Save screenshot to a specific file.
 
 ```bash
