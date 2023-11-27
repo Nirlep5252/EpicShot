@@ -11,8 +11,7 @@ fn main() -> Result<(), String> {
     // Determine which screenshot interface to use based on the input or the display server.
     let screenshot_interface: Box<dyn ScreenshotInterface>;
     if input.x11 && input.wayland {
-        eprintln!("You can't use both `--x11` and `--wayland` at the same time.");
-        std::process::exit(1);
+        return Err("You can't use both `--x11` and `--wayland` at the same time.".to_string());
     }
     if input.x11 {
         screenshot_interface = Box::new(x::XScreenshot::new());
