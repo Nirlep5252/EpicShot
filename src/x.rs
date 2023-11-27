@@ -16,15 +16,15 @@ impl XScreenshot {
 
     fn get_screenshot_image(
         &self,
-        screen: &xcb::x::Screen,
+        window: xcb::x::Window,
         x: i16,
         y: i16,
         width: u16,
         height: u16,
-    ) -> RgbaImage {
+    ) -> Result<RgbaImage, String> {
         let cookie = self.connection.send_request(&xcb::x::GetImage {
             format: xcb::x::ImageFormat::ZPixmap,
-            drawable: xcb::x::Drawable::Window(screen.root()),
+            drawable: xcb::x::Drawable::Window(window),
             x,
             y,
             width,
@@ -35,14 +35,13 @@ impl XScreenshot {
         let reply = self
             .connection
             .wait_for_reply(cookie)
-            .map_err(|e| e.to_string())
-            .unwrap();
-        RgbaImage::from_raw(
+            .map_err(|e| e.to_string())?;
+        Ok(RgbaImage::from_raw(
             width.into(),
             height.into(),
             self.image_data_to_pixels(reply.data()),
         )
-        .expect("Unable to create image from raw data")
+        .expect("Unable to create image from raw data"))
     }
 }
 
@@ -55,13 +54,13 @@ impl ScreenshotInterface for XScreenshot {
         let screen = setup.roots().nth(0).ok_or("No screen found")?;
 
         match screenshot_type {
-            ScreenshotType::AllScreens => Ok(self.get_screenshot_image(
-                screen,
+            ScreenshotType::AllScreens => self.get_screenshot_image(
+                screen.root(),
                 0,
                 0,
                 screen.width_in_pixels(),
                 screen.height_in_pixels(),
-            )),
+            ),
             ScreenshotType::Monitor(monitor_num) => {
                 // Get all the monitors
                 let res_cookie = self.connection.send_request(&xcb::randr::GetMonitors {
@@ -72,34 +71,48 @@ impl ScreenshotInterface for XScreenshot {
                     .connection
                     .wait_for_reply(res_cookie)
                     .map_err(|e| e.to_string())?;
-                let monitors = res_reply.monitors().collect::<Vec<_>>();
 
-                if monitor_num >= monitors.len() {
+                if monitor_num >= res_reply.n_outputs() as usize {
                     return Err(format!(
-                        "Monitor {} does not exist. There are only {} monitors.",
+                        "Monitor {} does not exist. There are only {} monitors. (0-indexed)",
                         monitor_num,
-                        monitors.len()
+                        res_reply.n_outputs()
                     ));
                 }
-                Ok(self.get_screenshot_image(
-                    screen,
-                    monitors[monitor_num].x(),
-                    monitors[monitor_num].y(),
-                    monitors[monitor_num].width(),
-                    monitors[monitor_num].height(),
-                ))
+                let monitor = res_reply.monitors().nth(monitor_num).unwrap();
+                self.get_screenshot_image(
+                    screen.root(),
+                    monitor.x(),
+                    monitor.y(),
+                    monitor.width(),
+                    monitor.height(),
+                )
             }
-            ScreenshotType::Window(_) => {
-                todo!();
+            ScreenshotType::Window(window_id) => {
+                let window_id = u32::from_str_radix(window_id.trim_start_matches("0x"), 16)
+                    .map_err(|_| "Invalid window ID (it starts with \"0x\")".to_string())?;
+                let window = unsafe { std::mem::transmute::<u32, xcb::x::Window>(window_id) };
+                let geometry_cookie = self.connection.send_request(&xcb::x::GetGeometry {
+                    drawable: xcb::x::Drawable::Window(window),
+                });
+                let geometry = self
+                    .connection
+                    .wait_for_reply(geometry_cookie)
+                    .map_err(|e| e.to_string())?;
+                self.get_screenshot_image(
+                    window,
+                    geometry.x(),
+                    geometry.y(),
+                    geometry.width(),
+                    geometry.height(),
+                )
             }
             ScreenshotType::Selection {
-                x: _,
-                y: _,
-                width: _,
-                height: _,
-            } => {
-                todo!();
-            }
+                x,
+                y,
+                width,
+                height,
+            } => self.get_screenshot_image(screen.root(), x, y, width, height),
         }
     }
 

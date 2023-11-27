@@ -3,12 +3,12 @@ use image::RgbaImage;
 pub(crate) enum ScreenshotType {
     AllScreens,
     Monitor(usize),
-    Window(u32),
+    Window(String),
     Selection {
-        x: u32,
-        y: u32,
-        width: u32,
-        height: u32,
+        x: i16,
+        y: i16,
+        width: u16,
+        height: u16,
     },
 }
 

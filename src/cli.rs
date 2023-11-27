@@ -16,8 +16,10 @@ pub(crate) struct Cli {
 
     /// Take screenshot of a specific window
     #[clap(long)]
-    pub(crate) window: Option<u32>,
+    pub(crate) window: Option<String>,
 
+    // TODO: implement selection for cli
+    //
     /// If you are using X11
     #[clap(long)]
     pub(crate) x11: bool,

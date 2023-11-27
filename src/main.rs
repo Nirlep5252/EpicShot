@@ -27,7 +27,7 @@ fn main() -> Result<(), String> {
     } else if input.monitor.is_some() {
         screenshot_type = ScreenshotType::Monitor(input.monitor.unwrap());
     } else if input.window.is_some() {
-        todo!("--window is not supported yet");
+        screenshot_type = ScreenshotType::Window(input.window.unwrap());
     } else {
         return Err(
             "You must specify a screenshot type. Use `--help` for more information.".to_string(),
