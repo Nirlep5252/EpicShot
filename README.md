@@ -34,20 +34,27 @@ SOON
 Take screenshot of your entire screen (including all monitors) and copy to clipboard.
 
 ```bash
-epicshot --x11 --all --clipboard
+epicshot --x11 --clipboard --all
 ```
 
 Take screenshot of a particular monitor and copy to clipboard.
 
 ```bash
-epicshot --x11 --monitor 0 --clipboard
+epicshot --x11 --clipboard --monitor 0
 ```
 
 Take screenshot of a particular window and copy to clipboard.
 
 ```bash
-epicshot --x11 --window <WINDOW ID> --clipboard
+epicshot --x11 --clipboard --window <WINDOW ID>
 # You can get the window ID using `xwininfo`
+```
+
+Take screenshot of a selection and copy to clipboard.
+
+```bash
+epicshot --x11 --clipboard --selection "0 0 500 700"
+# The selection input is "x y width height"
 ```
 
 Save screenshot to a specific file.
