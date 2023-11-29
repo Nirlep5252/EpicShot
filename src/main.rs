@@ -38,6 +38,9 @@ fn main() -> Result<(), ()> {
     } else if input.window.is_some() {
         info!("Taking screenshot of window {:?}", input.window);
         screenshot_type = ScreenshotType::Window(input.window.unwrap());
+    } else if input.selection.is_some() {
+        info!("Taking screenshot of selection {:?}", input.selection);
+        screenshot_type = ScreenshotType::Selection(input.selection.unwrap());
     } else {
         error!("You must specify a screenshot type. Use `--help` for more information.");
         return Err(());

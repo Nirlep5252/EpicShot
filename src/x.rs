@@ -107,12 +107,13 @@ impl ScreenshotInterface for XScreenshot {
                 debug!("{:?}", geometry);
                 self.get_screenshot_image(window, 0, 0, geometry.width(), geometry.height())
             }
-            ScreenshotType::Selection {
-                x,
-                y,
-                width,
-                height,
-            } => self.get_screenshot_image(screen.root(), x, y, width, height),
+            ScreenshotType::Selection(selection) => self.get_screenshot_image(
+                screen.root(),
+                selection.x,
+                selection.y,
+                selection.width,
+                selection.height,
+            ),
         }
     }
 

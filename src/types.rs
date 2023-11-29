@@ -1,15 +1,12 @@
 use image::RgbaImage;
 
+use crate::cli::ScreenshotSelection;
+
 pub(crate) enum ScreenshotType {
     AllScreens,
     Monitor(usize),
     Window(String),
-    Selection {
-        x: i16,
-        y: i16,
-        width: u16,
-        height: u16,
-    },
+    Selection(ScreenshotSelection),
 }
 
 pub(crate) trait ScreenshotInterface {
