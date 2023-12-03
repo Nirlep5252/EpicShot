@@ -94,9 +94,15 @@ impl ScreenshotInterface for XScreenshot {
                 )
             }
             ScreenshotType::Window(window_id) => {
-                let window_id = u32::from_str_radix(window_id.trim_start_matches("0x"), 16)
-                    .map_err(|_| error!("Invalid window ID (it starts with \"0x\")"))?;
-                let window = unsafe { std::mem::transmute::<u32, xcb::x::Window>(window_id) };
+                let res_id: u32 = if window_id.starts_with("0x") {
+                    u32::from_str_radix(window_id.trim_start_matches("0x"), 16)
+                        .map_err(|_| error!("Invalid window ID (it starts with \"0x\")"))?
+                } else {
+                    window_id
+                        .parse()
+                        .map_err(|e| error!("Unable to parse window ID: {e}"))?
+                };
+                let window = unsafe { std::mem::transmute::<u32, xcb::x::Window>(res_id) };
                 let geometry_cookie = self.connection.send_request(&xcb::x::GetGeometry {
                     drawable: xcb::x::Drawable::Window(window),
                 });
